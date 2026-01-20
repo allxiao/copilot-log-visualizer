@@ -295,6 +295,20 @@ function escapeHtml(text) {
 function renderResponseDetails() {
   if (!selectedRequest) return;
 
+  const isOpenAI = isOpenAIChatCompletions(selectedRequest);
+  const isChunked = Array.isArray(selectedRequest.response.body);
+  
+  // Try to merge if it's OpenAI OR if it's any chunked response with SSE format
+  let mergedResponse = null;
+  if (isChunked && selectedRequest.response.body.length > 0) {
+    if (isOpenAI) {
+      mergedResponse = mergeOpenAIStreamingResponse(selectedRequest.response.body);
+    } else {
+      // For non-OpenAI chunked responses, try to extract and merge 'data' fields
+      mergedResponse = mergeGenericStreamingResponse(selectedRequest.response.body);
+    }
+  }
+
   responsePanel.innerHTML = `
     <div class="section collapsible collapsed">
       <div class="section-header collapsible-header" onclick="toggleSection(this)">
@@ -311,18 +325,223 @@ function renderResponseDetails() {
       </div>
     </div>
 
-    ${selectedRequest.response.body ? `
+    ${mergedResponse ? `
     <div class="section collapsible">
       <div class="section-header collapsible-header" onclick="toggleSection(this)">
         <span class="toggle-icon">▼</span>
-        <span>Response Body</span>
+        <span>Response Body (Merged)</span>
       </div>
       <div class="section-body">
+        <pre>${JSON.stringify(mergedResponse, null, 2)}</pre>
+      </div>
+    </div>
+    ` : ''}
+
+    ${selectedRequest.response.body ? `
+    <div class="section collapsible ${mergedResponse || isChunked ? 'collapsed' : ''}">
+      <div class="section-header collapsible-header" onclick="toggleSection(this)">
+        <span class="toggle-icon">${mergedResponse || isChunked ? '▶' : '▼'}</span>
+        <span>Response Body ${mergedResponse || isChunked ? '(Raw)' : ''}</span>
+      </div>
+      <div class="section-body" ${mergedResponse || isChunked ? 'style="display: none;"' : ''}>
         <pre>${JSON.stringify(selectedRequest.response.body, null, 2)}</pre>
       </div>
     </div>
     ` : ''}
   `;
+}
+
+function mergeOpenAIStreamingResponse(responseBody) {
+  if (!responseBody || !Array.isArray(responseBody)) {
+    return null;
+  }
+
+  // Initialize the merged response structure
+  const merged = {
+    id: null,
+    object: 'chat.completion',
+    created: null,
+    model: null,
+    choices: [],
+    usage: null
+  };
+
+  const choicesMap = new Map();
+  
+  // Process each chunk
+  for (const chunk of responseBody) {
+    // Handle SSE format (event/data structure)
+    let data = chunk;
+    if (chunk.data) {
+      data = chunk.data;
+    }
+
+    // Skip if not an object
+    if (!data || typeof data !== 'object') {
+      continue;
+    }
+
+    // Skip [DONE] messages
+    if (data === '[DONE]' || (typeof data === 'string' && data === '[DONE]')) {
+      continue;
+    }
+
+    // Set metadata from first chunk
+    if (data.id && !merged.id) {
+      merged.id = data.id;
+    }
+    if (data.created && !merged.created) {
+      merged.created = data.created;
+    }
+    if (data.model && !merged.model) {
+      merged.model = data.model;
+    }
+    if (data.usage) {
+      merged.usage = data.usage;
+    }
+
+    // Merge choices
+    if (data.choices && Array.isArray(data.choices)) {
+      for (const choice of data.choices) {
+        const index = choice.index || 0;
+        
+        if (!choicesMap.has(index)) {
+          choicesMap.set(index, {
+            index: index,
+            message: {
+              role: 'assistant',
+              content: '',
+              tool_calls: []
+            },
+            finish_reason: null
+          });
+        }
+
+        const mergedChoice = choicesMap.get(index);
+
+        // Merge delta content
+        if (choice.delta) {
+          if (choice.delta.role) {
+            mergedChoice.message.role = choice.delta.role;
+          }
+          if (choice.delta.content) {
+            mergedChoice.message.content += choice.delta.content;
+          }
+          if (choice.delta.tool_calls) {
+            // Ensure tool_calls_map exists
+            if (!mergedChoice.tool_calls_map) {
+              mergedChoice.tool_calls_map = new Map();
+            }
+            
+            for (const toolCall of choice.delta.tool_calls) {
+              const tcIndex = toolCall.index !== undefined ? toolCall.index : 0;
+              
+              // Get or create tool call at this index
+              if (!mergedChoice.tool_calls_map.has(tcIndex)) {
+                mergedChoice.tool_calls_map.set(tcIndex, {
+                  id: null,
+                  type: 'function',
+                  function: {
+                    name: '',
+                    arguments: ''
+                  }
+                });
+              }
+
+              const mergedToolCall = mergedChoice.tool_calls_map.get(tcIndex);
+              
+              if (toolCall.id) {
+                mergedToolCall.id = toolCall.id;
+              }
+              if (toolCall.type) {
+                mergedToolCall.type = toolCall.type;
+              }
+              if (toolCall.function) {
+                if (toolCall.function.name) {
+                  mergedToolCall.function.name += toolCall.function.name;
+                }
+                if (toolCall.function.arguments) {
+                  mergedToolCall.function.arguments += toolCall.function.arguments;
+                }
+              }
+            }
+          }
+        }
+
+        // Set finish reason
+        if (choice.finish_reason) {
+          mergedChoice.finish_reason = choice.finish_reason;
+        }
+      }
+    }
+  }
+
+  // Convert choices map to array and clean up
+  merged.choices = Array.from(choicesMap.values()).sort((a, b) => a.index - b.index);
+  
+  // Convert tool_calls_map to array and clean up
+  for (const choice of merged.choices) {
+    // Convert tool_calls_map to sorted array
+    if (choice.tool_calls_map) {
+      choice.message.tool_calls = Array.from(choice.tool_calls_map.entries())
+        .sort((a, b) => a[0] - b[0])  // Sort by index
+        .map(([index, toolCall]) => ({
+          index: index,  // Preserve the index
+          ...toolCall
+        }));
+      delete choice.tool_calls_map;
+    }
+    
+    // Remove empty tool_calls or parse JSON arguments
+    if (choice.message.tool_calls.length === 0) {
+      delete choice.message.tool_calls;
+    } else {
+      // Parse JSON arguments
+      for (const toolCall of choice.message.tool_calls) {
+        try {
+          toolCall.function.arguments = JSON.parse(toolCall.function.arguments);
+        } catch {
+          // Keep as string if not valid JSON
+        }
+      }
+    }
+  }
+
+  // Only return merged response if we actually merged something
+  if (merged.choices.length === 0) {
+    return null;
+  }
+
+  return merged;
+}
+
+function mergeGenericStreamingResponse(responseBody) {
+  if (!responseBody || !Array.isArray(responseBody)) {
+    return null;
+  }
+
+  // Extract all 'data' fields from the chunks
+  const dataItems = [];
+  for (const chunk of responseBody) {
+    if (chunk.data && typeof chunk.data === 'object') {
+      dataItems.push(chunk.data);
+    } else if (typeof chunk === 'object' && !chunk.event && !chunk.data) {
+      // It's already a data object without the wrapper
+      dataItems.push(chunk);
+    }
+  }
+
+  if (dataItems.length === 0) {
+    return null;
+  }
+
+  // If there's only one item, return it directly
+  if (dataItems.length === 1) {
+    return dataItems[0];
+  }
+
+  // If multiple items, return as array
+  return dataItems;
 }
 
 document.querySelectorAll('.tab').forEach(tab => {

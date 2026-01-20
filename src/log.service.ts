@@ -68,7 +68,7 @@ export class LogService {
 
         let responseBody: any = entry.response.body;
         
-        if (responseBody && responseBody.startsWith('event:')) {
+        if (responseBody && (responseBody.startsWith('event:') || responseBody.startsWith('data:'))) {
           responseBody = this.parseSSE(responseBody);
         } else {
           try {
@@ -100,7 +100,7 @@ export class LogService {
         if (entry.response && entry.response.body) {
           let responseBody: any = entry.response.body;
           
-          if (responseBody.startsWith('event:')) {
+          if (responseBody.startsWith('event:') || responseBody.startsWith('data:')) {
             const parsedSSE = this.parseSSE(responseBody);
             if (Array.isArray(existing.response.body)) {
               existing.response.body.push(...parsedSSE);
