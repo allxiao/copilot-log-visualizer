@@ -97,6 +97,13 @@
       color: white;
     }
 
+    .request-item .request-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
     .request-item .method {
       display: inline-block;
       padding: 2px 8px;
@@ -119,18 +126,42 @@
     .request-item .url {
       font-size: 13px;
       word-break: break-all;
-      margin-top: 4px;
       color: #24292e;
+      margin-top: 4px;
     }
 
     .request-item.selected .url {
       color: white;
     }
 
+    .request-item .chat-summary {
+      flex: 1;
+      font-size: 11px;
+      color: #586069;
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: center;
+    }
+
+    .request-item.selected .chat-summary {
+      color: rgba(255,255,255,0.9);
+    }
+
     .request-item .meta {
       font-size: 11px;
       color: #586069;
       margin-top: 4px;
+    }
+
+    .request-item .token-summary {
+      color: #0366d6;
+      font-weight: 600;
+    }
+
+    .request-item.selected .token-summary {
+      color: rgba(255,255,255,1);
     }
 
     .request-item.selected .meta {

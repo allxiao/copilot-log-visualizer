@@ -127,17 +127,74 @@ function renderRequestList() {
     const actualIndex = requests.indexOf(req);
     const item = document.createElement('div');
     item.className = 'request-item';
-    item.innerHTML = `
-      <div>
-        <span class="method ${req.method}">${req.method}</span>
-        <span class="status-badge ${req.status >= 200 && req.status < 300 ? 'success' : 'error'}">${req.status}</span>
-      </div>
-      <div class="url">${new URL(req.url).pathname}</div>
-      <div class="meta">${new Date(req.timestamp).toLocaleTimeString()} • ${req.duration}ms</div>
-    `;
+    
+    // Check if this is a chat completions request
+    const isChatCompletions = req.url.includes('/chat/completions') && req.request.body && typeof req.request.body === 'object';
+    
+    if (isChatCompletions) {
+      const summary = getChatCompletionsSummary(req);
+      item.innerHTML = `
+        <div class="request-title">
+          <span class="method ${req.method}">${req.method}</span>
+          <span class="chat-summary" title="${summary.messageTooltip}">${summary.messageSummary}</span>
+          <span class="status-badge ${req.status >= 200 && req.status < 300 ? 'success' : 'error'}">${req.status}</span>
+        </div>
+        <div class="url">${new URL(req.url).pathname}</div>
+        <div class="meta">${new Date(req.timestamp).toLocaleTimeString()} • ${req.duration}ms • <span class="token-summary" title="${summary.tokenTooltip}">${summary.tokenSummary}</span></div>
+      `;
+    } else {
+      item.innerHTML = `
+        <div class="request-title">
+          <span class="method ${req.method}">${req.method}</span>
+          <span class="status-badge ${req.status >= 200 && req.status < 300 ? 'success' : 'error'}">${req.status}</span>
+        </div>
+        <div class="url">${new URL(req.url).pathname}</div>
+        <div class="meta">${new Date(req.timestamp).toLocaleTimeString()} • ${req.duration}ms</div>
+      `;
+    }
+    
     item.addEventListener('click', () => selectRequest(actualIndex));
     sidebar.appendChild(item);
   });
+}
+
+function getChatCompletionsSummary(req) {
+  const body = req.request.body;
+  
+  // Count messages by role
+  const messages = body.messages || [];
+  const userCount = messages.filter(m => m.role === 'user').length;
+  const systemCount = messages.filter(m => m.role === 'system').length;
+  const assistantCount = messages.filter(m => m.role === 'assistant').length;
+  const toolCount = messages.filter(m => m.role === 'tool').length;
+  const toolsCount = (body.tools || []).length;
+  
+  // Get token usage from response
+  let inputTokens = '?';
+  let outputTokens = '?';
+  
+  if (req.response.body) {
+    // Try to get merged response
+    const isChunked = Array.isArray(req.response.body);
+    if (isChunked) {
+      const merged = mergeOpenAIStreamingResponse(req.response.body);
+      if (merged && merged.usage) {
+        inputTokens = merged.usage.prompt_tokens || '?';
+        outputTokens = merged.usage.completion_tokens || '?';
+      }
+    } else if (req.response.body.usage) {
+      inputTokens = req.response.body.usage.prompt_tokens || '?';
+      outputTokens = req.response.body.usage.completion_tokens || '?';
+    }
+  }
+  
+  const messageSummary = `U${userCount} / S${systemCount} / A${assistantCount} / R${toolCount} / T${toolsCount}`;
+  const messageTooltip = `User: ${userCount}, System: ${systemCount}, Assistant: ${assistantCount}, Tool Results: ${toolCount}, Tools: ${toolsCount}`;
+  
+  const tokenSummary = `${inputTokens} / ${outputTokens}`;
+  const tokenTooltip = `Input tokens: ${inputTokens}, Output tokens: ${outputTokens}`;
+  
+  return { messageSummary, messageTooltip, tokenSummary, tokenTooltip };
 }
 
 function selectRequest(index) {
