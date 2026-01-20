@@ -519,6 +519,20 @@ function renderOpenAIResponseBody(response) {
                     <div class="choice-value"><pre>${choice.message.content}</pre></div>
                   </div>
                 ` : ''}
+                ${choice.message.refusal ? `
+                  <div class="choice-field">
+                    <div class="choice-label">Refusal</div>
+                    <div class="choice-value"><pre>${choice.message.refusal}</pre></div>
+                  </div>
+                ` : ''}
+                ${Object.entries(choice.message)
+                  .filter(([key]) => !['role', 'content', 'refusal', 'tool_calls'].includes(key))
+                  .map(([key, value]) => `
+                    <div class="choice-field">
+                      <div class="choice-label">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
+                      <div class="choice-value"><pre>${typeof value === 'string' ? value : JSON.stringify(value, null, 2)}</pre></div>
+                    </div>
+                  `).join('')}
                 ${choice.message.tool_calls && choice.message.tool_calls.length > 0 ? `
                   <div class="choice-field">
                     <div class="choice-label">Tool Calls</div>
@@ -590,10 +604,6 @@ function mergeOpenAIStreamingResponse(responseBody) {
 
   // Initialize the merged response structure
   const merged = {
-    id: null,
-    object: 'chat.completion',
-    created: null,
-    model: null,
     choices: [],
     usage: null
   };
@@ -618,18 +628,18 @@ function mergeOpenAIStreamingResponse(responseBody) {
       continue;
     }
 
-    // Set metadata from first chunk
-    if (data.id && !merged.id) {
-      merged.id = data.id;
-    }
-    if (data.created && !merged.created) {
-      merged.created = data.created;
-    }
-    if (data.model && !merged.model) {
-      merged.model = data.model;
-    }
-    if (data.usage) {
-      merged.usage = data.usage;
+    // Copy all top-level fields (except choices which we'll merge specially)
+    for (const [key, value] of Object.entries(data)) {
+      if (key === 'choices') {
+        // Handle choices separately below
+        continue;
+      } else if (key === 'usage') {
+        // Always take the latest usage info
+        merged.usage = value;
+      } else if (merged[key] === undefined) {
+        // Set field if not already set (take first occurrence)
+        merged[key] = value;
+      }
     }
 
     // Merge choices
@@ -653,12 +663,25 @@ function mergeOpenAIStreamingResponse(responseBody) {
 
         // Merge delta content
         if (choice.delta) {
+          // Handle role
           if (choice.delta.role) {
             mergedChoice.message.role = choice.delta.role;
           }
+          
+          // Handle content (concatenate)
           if (choice.delta.content) {
             mergedChoice.message.content += choice.delta.content;
           }
+          
+          // Handle refusal (concatenate)
+          if (choice.delta.refusal) {
+            if (!mergedChoice.message.refusal) {
+              mergedChoice.message.refusal = '';
+            }
+            mergedChoice.message.refusal += choice.delta.refusal;
+          }
+          
+          // Handle tool_calls
           if (choice.delta.tool_calls) {
             // Ensure tool_calls_map exists
             if (!mergedChoice.tool_calls_map) {
@@ -698,11 +721,33 @@ function mergeOpenAIStreamingResponse(responseBody) {
               }
             }
           }
+          
+          // Handle any other delta fields (like reasoning_content, etc.)
+          for (const [key, value] of Object.entries(choice.delta)) {
+            if (key !== 'role' && key !== 'content' && key !== 'refusal' && key !== 'tool_calls') {
+              // For string fields, concatenate; for others, take the value
+              if (typeof value === 'string') {
+                if (!mergedChoice.message[key]) {
+                  mergedChoice.message[key] = '';
+                }
+                mergedChoice.message[key] += value;
+              } else if (mergedChoice.message[key] === undefined) {
+                mergedChoice.message[key] = value;
+              }
+            }
+          }
         }
 
         // Set finish reason
         if (choice.finish_reason) {
           mergedChoice.finish_reason = choice.finish_reason;
+        }
+        
+        // Copy any other choice-level fields
+        for (const [key, value] of Object.entries(choice)) {
+          if (key !== 'index' && key !== 'delta' && key !== 'finish_reason' && mergedChoice[key] === undefined) {
+            mergedChoice[key] = value;
+          }
         }
       }
     }
