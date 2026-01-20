@@ -323,6 +323,20 @@ function renderRequestBody(request) {
             </div>
             <div class="message-body">
               ${msg.content ? `<div class="message-content">${escapeHtml(typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2))}</div>` : ''}
+              ${msg.refusal ? `
+                <div style="margin-top: 8px;">
+                  <div style="font-weight: 600; color: #d73a49; font-size: 12px; margin-bottom: 4px;">Refusal</div>
+                  <div class="message-content" style="border-left: 3px solid #d73a49; padding-left: 12px; background: #ffeef0;">${escapeHtml(msg.refusal)}</div>
+                </div>
+              ` : ''}
+              ${Object.entries(msg)
+                .filter(([key]) => !['role', 'content', 'refusal', 'tool_calls', 'name', 'tool_call_id', 'parsed'].includes(key))
+                .map(([key, value]) => `
+                  <div style="margin-top: 8px;">
+                    <div style="font-weight: 600; color: #0366d6; font-size: 12px; margin-bottom: 4px;">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
+                    <div class="message-content" style="border-left: 3px solid #0366d6; padding-left: 12px; background: #f1f8ff;">${typeof value === 'string' ? escapeHtml(value) : `<pre style="margin: 0; background: transparent; border: none; padding: 0;">${JSON.stringify(value, null, 2)}</pre>`}</div>
+                  </div>
+                `).join('')}
               ${msg.tool_calls ? `
                 <div class="message-tools">
                   <strong>Tool Calls:</strong>
