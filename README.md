@@ -83,21 +83,37 @@ http://localhost:3001
 
 ### Capturing Logs with Mitmproxy
 
-To capture logs from GitHub Copilot CLI, use the mitmproxy helper utilities in the `mitm/` directory:
+To capture logs from GitHub Copilot CLI, use the mitmproxy helper utilities in the `scripts/` directory:
 
 1. **Start the proxy** (in one terminal):
-   ```bash
-   cd mitm
+
+   **Windows:**
+   ```cmd
+   cd scripts
    start-proxy.cmd > out.jsonl
    ```
 
-2. **Run Copilot CLI through the proxy** (in another terminal):
+   **Linux/macOS:**
    ```bash
-   cd mitm
-   proxied-copilot.cmd "your command here"
+   cd scripts
+   ./start-proxy.sh > out.jsonl
    ```
 
-3. **Load the captured logs** into the visualizer by dragging `mitm/out.jsonl` onto the page
+2. **Run Copilot CLI through the proxy** (in another terminal):
+
+   **Windows:**
+   ```cmd
+   cd scripts
+   proxied-copilot.cmd
+   ```
+
+   **Linux/macOS:**
+   ```bash
+   cd scripts
+   ./proxied-copilot.sh
+   ```
+
+3. **Load the captured logs** into the visualizer by dragging `out.jsonl` onto the page
 
 See [mitm/README.md](mitm/README.md) for detailed setup instructions.
 

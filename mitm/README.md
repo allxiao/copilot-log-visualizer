@@ -14,9 +14,16 @@ request logs in JSONL format can be later visualized by the web app in the outer
 
 In one terminal, start the mitmproxy server and redirect output to a file:
 
+**Windows:**
 ```cmd
-cd mitm
+cd ..\scripts
 start-proxy.cmd > out.jsonl
+```
+
+**Linux/macOS:**
+```bash
+cd ../scripts
+./start-proxy.sh > out.jsonl
 ```
 
 This will:
@@ -30,14 +37,16 @@ This will:
 
 In another terminal, use the proxied copilot wrapper:
 
+**Windows:**
 ```cmd
-cd mitm
-proxied-copilot.cmd <your copilot command>
+cd ..\scripts
+proxied-copilot.cmd
 ```
 
-For example:
-```cmd
-proxied-copilot.cmd "what files are in this directory?"
+**Linux/macOS:**
+```bash
+cd ../scripts
+./proxied-copilot.sh
 ```
 
 This wrapper:
@@ -58,9 +67,9 @@ Each line in `out.jsonl` will be a JSON object containing:
 
 ## Files
 
-- **`start-proxy.cmd`** - Starts mitmproxy with the JSON logging script
-- **`proxied-copilot.cmd`** - Wrapper to run Copilot CLI through the proxy
 - **`mitm-to-json.py`** - mitmproxy script that formats traffic as JSON lines
+- **`../scripts/start-proxy.cmd`** / **`start-proxy.sh`** - Starts mitmproxy with the JSON logging script (Windows/Linux/macOS)
+- **`../scripts/proxied-copilot.cmd`** / **`proxied-copilot.sh`** - Wrapper to run Copilot CLI through the proxy (Windows/Linux/macOS)
 
 ## Troubleshooting
 
