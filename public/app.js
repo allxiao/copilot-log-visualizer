@@ -157,12 +157,12 @@ function renderRequestDetails() {
   const isOpenAI = isOpenAIChatCompletions(selectedRequest);
 
   requestPanel.innerHTML = `
-    <div class="section collapsible">
+    <div class="section collapsible collapsed">
       <div class="section-header collapsible-header" onclick="toggleSection(this)">
-        <span class="toggle-icon">▼</span>
+        <span class="toggle-icon">▶</span>
         <span>General</span>
       </div>
-      <div class="section-body">
+      <div class="section-body" style="display: none;">
         <div class="info-row">
           <div class="info-label">Request URL</div>
           <div class="info-value">${selectedRequest.url}</div>
