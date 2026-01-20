@@ -313,13 +313,13 @@ function renderRequestBody(request) {
       </div>
       <div class="section-body">
         ${messages.map((msg, idx) => `
-          <div class="message-item collapsible">
+          <div class="message-item collapsible" id="message-${idx}">
             <div class="message-role collapsible-header" onclick="toggleSection(this)">
               <div>
                 <span class="toggle-icon">▼</span>
                 <strong>${msg.role || 'unknown'}</strong>
               </div>
-              ${msg.role === 'tool' && msg.tool_call_id ? `<span class="tool-id">${msg.tool_call_id}</span>` : ''}
+              ${msg.role === 'tool' && msg.tool_call_id ? `<span class="tool-id tool-id-link" onclick="navigateToToolCall('${msg.tool_call_id}', event)">${msg.tool_call_id}</span>` : ''}
             </div>
             <div class="message-body">
               ${msg.content ? `<div class="message-content">${escapeHtml(typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2))}</div>` : ''}
@@ -328,13 +328,13 @@ function renderRequestBody(request) {
                   <strong>Tool Calls:</strong>
                   <div style="margin-top: 8px;">
                     ${msg.tool_calls.map(tc => `
-                      <div class="tool-item">
+                      <div class="tool-item" id="tool-call-${tc.id}">
                         <div class="tool-header">
                           <div>
                             <strong>${tc.type || 'function'}: ${tc.function?.name || 'Unknown'}</strong>
                             ${tc.index !== undefined ? `<span class="badge" style="margin-left: 8px;">Index: ${tc.index}</span>` : ''}
                           </div>
-                          ${tc.id ? `<span class="tool-id">${tc.id}</span>` : ''}
+                          ${tc.id ? `<span class="tool-id tool-id-link" onclick="navigateToToolResult('${tc.id}', event)">${tc.id}</span>` : ''}
                         </div>
                         ${tc.function?.arguments ? `
                           <div class="tool-args">
@@ -828,3 +828,70 @@ document.addEventListener('click', (e) => {
     dropdown.style.display = 'none';
   }
 });
+
+// Navigation functions for tool calls
+function navigateToToolResult(toolCallId, event) {
+  event.stopPropagation();
+  
+  if (!selectedRequest || !selectedRequest.request.body) return;
+  
+  const messages = selectedRequest.request.body.messages || [];
+  const toolMessageIndex = messages.findIndex(msg => msg.role === 'tool' && msg.tool_call_id === toolCallId);
+  
+  if (toolMessageIndex !== -1) {
+    const targetElement = document.getElementById(`message-${toolMessageIndex}`);
+    if (targetElement) {
+      // Expand the message if collapsed
+      if (targetElement.classList.contains('collapsed')) {
+        const header = targetElement.querySelector('.collapsible-header');
+        if (header) toggleSection(header);
+      }
+      
+      // Scroll to the element
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Highlight temporarily
+      targetElement.style.backgroundColor = '#fff3cd';
+      setTimeout(() => {
+        targetElement.style.backgroundColor = '';
+      }, 2000);
+    }
+  }
+}
+
+function navigateToToolCall(toolCallId, event) {
+  event.stopPropagation();
+  
+  if (!selectedRequest || !selectedRequest.request.body) return;
+  
+  const messages = selectedRequest.request.body.messages || [];
+  const assistantMessageIndex = messages.findIndex(msg => 
+    msg.role === 'assistant' && 
+    msg.tool_calls && 
+    msg.tool_calls.some(tc => tc.id === toolCallId)
+  );
+  
+  if (assistantMessageIndex !== -1) {
+    const messageElement = document.getElementById(`message-${assistantMessageIndex}`);
+    const toolCallElement = document.getElementById(`tool-call-${toolCallId}`);
+    
+    if (messageElement && toolCallElement) {
+      // Expand the message if collapsed
+      if (messageElement.classList.contains('collapsed')) {
+        const header = messageElement.querySelector('.collapsible-header');
+        if (header) toggleSection(header);
+      }
+      
+      // Wait a bit for expand animation, then scroll to the specific tool call
+      setTimeout(() => {
+        toolCallElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Highlight the specific tool call temporarily
+        toolCallElement.style.backgroundColor = '#fff3cd';
+        setTimeout(() => {
+          toolCallElement.style.backgroundColor = '';
+        }, 2000);
+      }, 100);
+    }
+  }
+}
