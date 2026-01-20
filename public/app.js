@@ -313,37 +313,42 @@ function renderRequestBody(request) {
       </div>
       <div class="section-body">
         ${messages.map((msg, idx) => `
-          <div class="message-item">
-            <div class="message-role">
-              <strong>${msg.role || 'unknown'}</strong>
+          <div class="message-item collapsible">
+            <div class="message-role collapsible-header" onclick="toggleSection(this)">
+              <div>
+                <span class="toggle-icon">▼</span>
+                <strong>${msg.role || 'unknown'}</strong>
+              </div>
               ${msg.role === 'tool' && msg.tool_call_id ? `<span class="tool-id">${msg.tool_call_id}</span>` : ''}
             </div>
-            ${msg.content ? `<div class="message-content">${escapeHtml(typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2))}</div>` : ''}
-            ${msg.tool_calls ? `
-              <div class="message-tools">
-                <strong>Tool Calls:</strong>
-                <div style="margin-top: 8px;">
-                  ${msg.tool_calls.map(tc => `
-                    <div class="tool-item">
-                      <div class="tool-header">
-                        <div>
-                          <strong>${tc.type || 'function'}: ${tc.function?.name || 'Unknown'}</strong>
-                          ${tc.index !== undefined ? `<span class="badge" style="margin-left: 8px;">Index: ${tc.index}</span>` : ''}
+            <div class="message-body">
+              ${msg.content ? `<div class="message-content">${escapeHtml(typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2))}</div>` : ''}
+              ${msg.tool_calls ? `
+                <div class="message-tools">
+                  <strong>Tool Calls:</strong>
+                  <div style="margin-top: 8px;">
+                    ${msg.tool_calls.map(tc => `
+                      <div class="tool-item">
+                        <div class="tool-header">
+                          <div>
+                            <strong>${tc.type || 'function'}: ${tc.function?.name || 'Unknown'}</strong>
+                            ${tc.index !== undefined ? `<span class="badge" style="margin-left: 8px;">Index: ${tc.index}</span>` : ''}
+                          </div>
+                          ${tc.id ? `<span class="tool-id">${tc.id}</span>` : ''}
                         </div>
-                        ${tc.id ? `<span class="tool-id">${tc.id}</span>` : ''}
+                        ${tc.function?.arguments ? `
+                          <div class="tool-args">
+                            <strong>Arguments:</strong>
+                            <pre>${typeof tc.function.arguments === 'string' ? tc.function.arguments : JSON.stringify(tc.function.arguments, null, 2)}</pre>
+                          </div>
+                        ` : ''}
                       </div>
-                      ${tc.function?.arguments ? `
-                        <div class="tool-args">
-                          <strong>Arguments:</strong>
-                          <pre>${typeof tc.function.arguments === 'string' ? tc.function.arguments : JSON.stringify(tc.function.arguments, null, 2)}</pre>
-                        </div>
-                      ` : ''}
-                    </div>
-                  `).join('')}
+                    `).join('')}
+                  </div>
                 </div>
-              </div>
-            ` : ''}
-            ${msg.name ? `<div class="message-name"><strong>Name:</strong> ${msg.name}</div>` : ''}
+              ` : ''}
+              ${msg.name ? `<div class="message-name"><strong>Name:</strong> ${msg.name}</div>` : ''}
+            </div>
           </div>
         `).join('')}
       </div>

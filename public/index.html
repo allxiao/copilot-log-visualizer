@@ -412,7 +412,7 @@
     }
 
     .message-item {
-      padding: 12px;
+      padding: 0;
       margin-bottom: 12px;
       border: 1px solid #e1e4e8;
       border-radius: 6px;
@@ -429,9 +429,27 @@
       align-items: center;
       color: #0366d6;
       font-weight: 600;
-      margin-bottom: 8px;
       font-size: 13px;
       text-transform: capitalize;
+      padding: 12px;
+      cursor: pointer;
+    }
+
+    .message-role:hover {
+      background: rgba(3, 102, 214, 0.05);
+    }
+
+    .message-role .toggle-icon {
+      margin-right: 4px;
+      font-size: 10px;
+    }
+
+    .message-body {
+      padding: 0 12px 12px 12px;
+    }
+
+    .message-item.collapsed .message-body {
+      display: none;
     }
 
     .message-content {
