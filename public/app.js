@@ -1,5 +1,6 @@
 let requests = [];
 let selectedRequest = null;
+let selectedPaths = new Set(); // Track selected filter paths
 
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
@@ -70,8 +71,60 @@ function renderRequestList() {
     return;
   }
 
-  sidebar.innerHTML = '';
-  requests.forEach((req, index) => {
+  // Extract unique paths
+  const uniquePaths = [...new Set(requests.map(req => {
+    try {
+      return new URL(req.url).pathname;
+    } catch {
+      return req.url;
+    }
+  }))].sort();
+
+  // Filter requests based on selected paths
+  const filteredRequests = selectedPaths.size === 0 
+    ? requests 
+    : requests.filter(req => {
+        try {
+          return selectedPaths.has(new URL(req.url).pathname);
+        } catch {
+          return selectedPaths.has(req.url);
+        }
+      });
+
+  // Render filter header
+  const filterHtml = `
+    <div class="filter-header">
+      <label>Filter:</label>
+      <div class="filter-dropdown">
+        <button class="filter-button" onclick="toggleFilterDropdown(event)">
+          ${selectedPaths.size === 0 ? 'All paths' : `${selectedPaths.size} selected`}
+          <span class="dropdown-arrow">▼</span>
+        </button>
+        <div class="filter-options" id="filterOptions" style="display: none;">
+          <div class="filter-option">
+            <label>
+              <input type="checkbox" ${selectedPaths.size === 0 ? 'checked' : ''} onchange="selectAllPaths()">
+              <strong>All paths</strong>
+            </label>
+          </div>
+          ${uniquePaths.map(path => `
+            <div class="filter-option">
+              <label>
+                <input type="checkbox" value="${path}" ${selectedPaths.has(path) ? 'checked' : ''} onchange="togglePath('${path.replace(/'/g, "\\'")}')">
+                ${path}
+              </label>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  sidebar.innerHTML = filterHtml;
+
+  // Render filtered request items
+  filteredRequests.forEach((req, index) => {
+    const actualIndex = requests.indexOf(req);
     const item = document.createElement('div');
     item.className = 'request-item';
     item.innerHTML = `
@@ -82,7 +135,7 @@ function renderRequestList() {
       <div class="url">${new URL(req.url).pathname}</div>
       <div class="meta">${new Date(req.timestamp).toLocaleTimeString()} • ${req.duration}ms</div>
     `;
-    item.addEventListener('click', () => selectRequest(index));
+    item.addEventListener('click', () => selectRequest(actualIndex));
     sidebar.appendChild(item);
   });
 }
@@ -390,15 +443,14 @@ function renderOpenAIResponseBody(response) {
         ${response.choices.map((choice, idx) => `
           <div class="message-item">
             <div class="message-header">
-              <strong>Choice ${choice.index !== undefined ? choice.index : idx}</strong>
-              ${choice.finish_reason ? `<span class="badge">${choice.finish_reason}</span>` : ''}
+              <div>
+                <strong>Choice ${choice.index !== undefined ? choice.index : idx}</strong>
+                ${choice.message?.role ? ` - ${choice.message.role}` : ''}
+              </div>
+              ${choice.finish_reason ? `<span>finish_reason: <span class="badge">${choice.finish_reason}</span></span>` : ''}
             </div>
             ${choice.message ? `
               <div class="choice-content">
-                <div class="choice-field">
-                  <div class="choice-label">Role</div>
-                  <div class="choice-value">${choice.message.role}</div>
-                </div>
                 ${choice.message.content ? `
                   <div class="choice-field">
                     <div class="choice-label">Content</div>
@@ -672,4 +724,45 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById(`${targetTab}-panel`).classList.add('active');
   });
+});
+
+// Filter functions
+function toggleFilterDropdown(event) {
+  event.stopPropagation();
+  const dropdown = document.getElementById('filterOptions');
+  dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+function togglePath(path) {
+  if (selectedPaths.has(path)) {
+    selectedPaths.delete(path);
+  } else {
+    selectedPaths.add(path);
+  }
+  renderRequestList();
+  // Keep dropdown open after selection
+  const dropdown = document.getElementById('filterOptions');
+  if (dropdown) {
+    dropdown.style.display = 'block';
+  }
+}
+
+function selectAllPaths() {
+  selectedPaths.clear();
+  renderRequestList();
+  // Keep dropdown open after selection
+  const dropdown = document.getElementById('filterOptions');
+  if (dropdown) {
+    dropdown.style.display = 'block';
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+  const dropdown = document.getElementById('filterOptions');
+  const filterDropdown = document.querySelector('.filter-dropdown');
+  if (dropdown && filterDropdown && 
+      !filterDropdown.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
 });
