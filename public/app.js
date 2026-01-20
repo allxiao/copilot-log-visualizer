@@ -234,9 +234,28 @@ function getChatCompletionsSummary(req) {
 function selectRequest(index) {
   selectedRequest = requests[index];
   
-  document.querySelectorAll('.request-item').forEach((item, i) => {
-    item.classList.toggle('selected', i === index);
+  // Remove selected class from all items
+  document.querySelectorAll('.request-item').forEach(item => {
+    item.classList.remove('selected');
   });
+  
+  // Add selected class to the clicked item
+  // Find the item that corresponds to this request
+  const items = document.querySelectorAll('.request-item');
+  const filteredRequests = selectedPaths.size === 0 
+    ? requests 
+    : requests.filter(req => {
+        try {
+          return selectedPaths.has(new URL(req.url).pathname);
+        } catch {
+          return selectedPaths.has(req.url);
+        }
+      });
+  
+  const filteredIndex = filteredRequests.indexOf(requests[index]);
+  if (filteredIndex !== -1 && items[filteredIndex]) {
+    items[filteredIndex].classList.add('selected');
+  }
 
   renderRequestDetails();
   renderResponseDetails();
