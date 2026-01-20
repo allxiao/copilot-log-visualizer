@@ -352,13 +352,13 @@ function renderResponseDetails() {
 
     ${mergedResponse && isOpenAI ? renderOpenAIResponseBody(mergedResponse) : ''}
 
-    ${mergedResponse && !isOpenAI ? `
-    <div class="section collapsible">
+    ${mergedResponse ? `
+    <div class="section collapsible ${isOpenAI ? 'collapsed' : ''}">
       <div class="section-header collapsible-header" onclick="toggleSection(this)">
-        <span class="toggle-icon">▼</span>
+        <span class="toggle-icon">${isOpenAI ? '▶' : '▼'}</span>
         <span>Response Body (Merged)</span>
       </div>
-      <div class="section-body">
+      <div class="section-body" ${isOpenAI ? 'style="display: none;"' : ''}>
         <pre>${JSON.stringify(mergedResponse, null, 2)}</pre>
       </div>
     </div>
