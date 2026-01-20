@@ -101,9 +101,14 @@ function selectRequest(index) {
 function renderRequestDetails() {
   if (!selectedRequest) return;
 
+  const isOpenAI = isOpenAIChatCompletions(selectedRequest);
+
   requestPanel.innerHTML = `
-    <div class="section">
-      <div class="section-header">General</div>
+    <div class="section collapsible">
+      <div class="section-header collapsible-header" onclick="toggleSection(this)">
+        <span class="toggle-icon">▼</span>
+        <span>General</span>
+      </div>
       <div class="section-body">
         <div class="info-row">
           <div class="info-label">Request URL</div>
@@ -138,9 +143,12 @@ function renderRequestDetails() {
       </div>
     </div>
 
-    <div class="section">
-      <div class="section-header">Request Headers</div>
-      <div class="section-body">
+    <div class="section collapsible collapsed">
+      <div class="section-header collapsible-header" onclick="toggleSection(this)">
+        <span class="toggle-icon">▶</span>
+        <span>Request Headers</span>
+      </div>
+      <div class="section-body" style="display: none;">
         ${Object.entries(selectedRequest.request.headers).map(([key, value]) => `
           <div class="info-row">
             <div class="info-label">${key}</div>
@@ -150,24 +158,150 @@ function renderRequestDetails() {
       </div>
     </div>
 
-    ${selectedRequest.request.body ? `
+    ${selectedRequest.request.body ? renderRequestBody(selectedRequest) : ''}
+  `;
+}
+
+function isOpenAIChatCompletions(request) {
+  return request.url.includes('/chat/completions') && 
+         request.request.body && 
+         typeof request.request.body === 'object';
+}
+
+function renderRequestBody(request) {
+  const body = request.request.body;
+  
+  if (!isOpenAIChatCompletions(request)) {
+    return `
     <div class="section">
       <div class="section-header">Request Body</div>
       <div class="section-body">
-        <pre>${JSON.stringify(selectedRequest.request.body, null, 2)}</pre>
+        <pre>${JSON.stringify(body, null, 2)}</pre>
+      </div>
+    </div>
+    `;
+  }
+
+  // OpenAI Chat Completions specific rendering
+  const messages = body.messages || [];
+  const tools = body.tools || [];
+  const metadata = {};
+  
+  // Extract metadata (everything except messages and tools)
+  for (const [key, value] of Object.entries(body)) {
+    if (key !== 'messages' && key !== 'tools') {
+      metadata[key] = value;
+    }
+  }
+
+  return `
+    ${messages.length > 0 ? `
+    <div class="section collapsible">
+      <div class="section-header collapsible-header" onclick="toggleSection(this)">
+        <span class="toggle-icon">▼</span>
+        <span>Messages</span>
+      </div>
+      <div class="section-body">
+        ${messages.map((msg, idx) => `
+          <div class="message-item">
+            <div class="message-role"><strong>${msg.role || 'unknown'}</strong></div>
+            ${msg.content ? `<div class="message-content">${escapeHtml(typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2))}</div>` : ''}
+            ${msg.tool_calls ? `<div class="message-tools"><strong>Tool Calls:</strong><pre>${JSON.stringify(msg.tool_calls, null, 2)}</pre></div>` : ''}
+            ${msg.tool_call_id ? `<div class="message-tool-id"><strong>Tool Call ID:</strong> ${msg.tool_call_id}</div>` : ''}
+            ${msg.name ? `<div class="message-name"><strong>Name:</strong> ${msg.name}</div>` : ''}
+          </div>
+        `).join('')}
       </div>
     </div>
     ` : ''}
+
+    ${tools.length > 0 ? `
+    <div class="section collapsible collapsed">
+      <div class="section-header collapsible-header" onclick="toggleSection(this)">
+        <span class="toggle-icon">▶</span>
+        <span>Tools</span>
+      </div>
+      <div class="section-body" style="display: none;">
+        ${tools.map((tool, idx) => `
+          <div class="tool-item">
+            <div class="tool-header">
+              <strong>${tool.type || 'function'}</strong>
+              ${tool.function?.name ? `: ${tool.function.name}` : ''}
+            </div>
+            ${tool.function?.description ? `<div class="tool-description">${escapeHtml(tool.function.description)}</div>` : ''}
+            ${tool.function?.parameters ? `<div class="tool-params"><pre>${JSON.stringify(tool.function.parameters, null, 2)}</pre></div>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+
+    ${Object.keys(metadata).length > 0 ? `
+    <div class="section collapsible collapsed">
+      <div class="section-header collapsible-header" onclick="toggleSection(this)">
+        <span class="toggle-icon">▶</span>
+        <span>Metadata</span>
+      </div>
+      <div class="section-body" style="display: none;">
+        ${Object.entries(metadata).map(([key, value]) => `
+          <div class="info-row">
+            <div class="info-label">${key}</div>
+            <div class="info-value">${typeof value === 'object' ? `<pre>${JSON.stringify(value, null, 2)}</pre>` : escapeHtml(String(value))}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+
+    <div class="section collapsible collapsed">
+      <div class="section-header collapsible-header" onclick="toggleSection(this)">
+        <span class="toggle-icon">▶</span>
+        <span>Request Body (Raw)</span>
+      </div>
+      <div class="section-body" style="display: none;">
+        <pre>${JSON.stringify(body, null, 2)}</pre>
+      </div>
+    </div>
   `;
+}
+
+function toggleSection(header) {
+  const section = header.parentElement;
+  const body = section.querySelector('.section-body');
+  const icon = header.querySelector('.toggle-icon');
+  
+  if (section.classList.contains('collapsed')) {
+    section.classList.remove('collapsed');
+    body.style.display = 'block';
+    icon.textContent = '▼';
+  } else {
+    section.classList.add('collapsed');
+    body.style.display = 'none';
+    icon.textContent = '▶';
+  }
+}
+
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, m => map[m]);
 }
 
 function renderResponseDetails() {
   if (!selectedRequest) return;
 
   responsePanel.innerHTML = `
-    <div class="section">
-      <div class="section-header">Response Headers</div>
-      <div class="section-body">
+    <div class="section collapsible collapsed">
+      <div class="section-header collapsible-header" onclick="toggleSection(this)">
+        <span class="toggle-icon">▶</span>
+        <span>Response Headers</span>
+      </div>
+      <div class="section-body" style="display: none;">
         ${Object.entries(selectedRequest.response.headers).map(([key, value]) => `
           <div class="info-row">
             <div class="info-label">${key}</div>
@@ -178,8 +312,11 @@ function renderResponseDetails() {
     </div>
 
     ${selectedRequest.response.body ? `
-    <div class="section">
-      <div class="section-header">Response Body</div>
+    <div class="section collapsible">
+      <div class="section-header collapsible-header" onclick="toggleSection(this)">
+        <span class="toggle-icon">▼</span>
+        <span>Response Body</span>
+      </div>
       <div class="section-body">
         <pre>${JSON.stringify(selectedRequest.response.body, null, 2)}</pre>
       </div>

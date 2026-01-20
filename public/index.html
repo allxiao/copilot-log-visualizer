@@ -201,6 +201,30 @@
       color: #24292e;
     }
 
+    .collapsible-header {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .collapsible-header:hover {
+      background: #e1e4e8;
+    }
+
+    .toggle-icon {
+      display: inline-block;
+      width: 20px;
+      margin-right: 8px;
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+
+    .collapsible.collapsed .section-body {
+      display: none;
+    }
+
     .section-body {
       padding: 16px;
     }
@@ -267,6 +291,82 @@
       text-align: center;
       padding: 40px;
       color: #586069;
+    }
+
+    .message-item {
+      padding: 12px;
+      margin-bottom: 12px;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      background: #fafbfc;
+    }
+
+    .message-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .message-role {
+      color: #0366d6;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 13px;
+      text-transform: capitalize;
+    }
+
+    .message-content {
+      color: #24292e;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-bottom: 8px;
+    }
+
+    .message-tools,
+    .message-tool-id,
+    .message-name {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #586069;
+    }
+
+    .message-tools pre {
+      margin-top: 4px;
+      background: white;
+    }
+
+    .tool-item {
+      padding: 12px;
+      margin-bottom: 12px;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      background: #fafbfc;
+    }
+
+    .tool-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .tool-header {
+      color: #0366d6;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .tool-description {
+      color: #586069;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .tool-params {
+      margin-top: 8px;
+    }
+
+    .tool-params pre {
+      background: white;
     }
   </style>
 </head>
