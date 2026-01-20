@@ -432,10 +432,9 @@ function renderRequestBody(request) {
         ${tools.map((tool, idx) => `
           <div class="tool-item">
             <div class="tool-header">
-              <strong>${tool.type || 'function'}</strong>
-              ${tool.function?.name ? `: ${tool.function.name}` : ''}
+              <strong>${tool.type || 'function'}${tool.function?.name ? `: ${tool.function.name}` : ''}</strong>
             </div>
-            ${tool.function?.description ? `<div class="tool-description">${escapeHtml(tool.function.description)}</div>` : ''}
+            ${tool.function?.description ? `<div class="tool-description" style="white-space: pre-wrap;">${escapeHtml(tool.function.description)}</div>` : ''}
             ${tool.function?.parameters ? `<div class="tool-params"><pre>${JSON.stringify(tool.function.parameters, null, 2)}</pre></div>` : ''}
           </div>
         `).join('')}
