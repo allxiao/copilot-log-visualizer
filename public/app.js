@@ -325,7 +325,9 @@ function renderResponseDetails() {
       </div>
     </div>
 
-    ${mergedResponse ? `
+    ${mergedResponse && isOpenAI ? renderOpenAIResponseBody(mergedResponse) : ''}
+
+    ${mergedResponse && !isOpenAI ? `
     <div class="section collapsible">
       <div class="section-header collapsible-header" onclick="toggleSection(this)">
         <span class="toggle-icon">▼</span>
@@ -349,6 +351,96 @@ function renderResponseDetails() {
     </div>
     ` : ''}
   `;
+}
+
+function renderOpenAIResponseBody(response) {
+  // Choices card
+  const choicesHtml = response.choices && response.choices.length > 0 ? `
+    <div class="section collapsible">
+      <div class="section-header collapsible-header" onclick="toggleSection(this)">
+        <span class="toggle-icon">▼</span>
+        <span>Choices</span>
+      </div>
+      <div class="section-body">
+        ${response.choices.map((choice, idx) => `
+          <div class="message-item">
+            <div class="message-header">
+              <strong>Choice ${choice.index !== undefined ? choice.index : idx}</strong>
+              ${choice.finish_reason ? `<span class="badge">${choice.finish_reason}</span>` : ''}
+            </div>
+            ${choice.message ? `
+              <div class="choice-content">
+                <div class="choice-field">
+                  <div class="choice-label">Role</div>
+                  <div class="choice-value">${choice.message.role}</div>
+                </div>
+                ${choice.message.content ? `
+                  <div class="choice-field">
+                    <div class="choice-label">Content</div>
+                    <div class="choice-value"><pre>${choice.message.content}</pre></div>
+                  </div>
+                ` : ''}
+                ${choice.message.tool_calls && choice.message.tool_calls.length > 0 ? `
+                  <div class="choice-field">
+                    <div class="choice-label">Tool Calls</div>
+                    <div class="choice-value">
+                      ${choice.message.tool_calls.map(tc => `
+                        <div class="tool-item">
+                          <div class="tool-header">
+                            <strong>${tc.function?.name || 'Unknown'}</strong>
+                            ${tc.index !== undefined ? `<span class="badge">Index: ${tc.index}</span>` : ''}
+                          </div>
+                          ${tc.id ? `<div class="tool-meta">ID: ${tc.id}</div>` : ''}
+                          ${tc.type ? `<div class="tool-meta">Type: ${tc.type}</div>` : ''}
+                          ${tc.function?.arguments ? `
+                            <div class="tool-args">
+                              <strong>Arguments:</strong>
+                              <pre>${JSON.stringify(tc.function.arguments, null, 2)}</pre>
+                            </div>
+                          ` : ''}
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            ` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  // Metadata card
+  const metadata = {};
+  if (response.id) metadata.ID = response.id;
+  if (response.object) metadata.Object = response.object;
+  if (response.created) metadata.Created = new Date(response.created * 1000).toISOString();
+  if (response.model) metadata.Model = response.model;
+  if (response.usage) {
+    if (response.usage.prompt_tokens) metadata['Prompt Tokens'] = response.usage.prompt_tokens;
+    if (response.usage.completion_tokens) metadata['Completion Tokens'] = response.usage.completion_tokens;
+    if (response.usage.total_tokens) metadata['Total Tokens'] = response.usage.total_tokens;
+  }
+
+  const metadataHtml = Object.keys(metadata).length > 0 ? `
+    <div class="section collapsible collapsed">
+      <div class="section-header collapsible-header" onclick="toggleSection(this)">
+        <span class="toggle-icon">▶</span>
+        <span>Metadata</span>
+      </div>
+      <div class="section-body" style="display: none;">
+        ${Object.entries(metadata).map(([key, value]) => `
+          <div class="info-row">
+            <div class="info-label">${key}</div>
+            <div class="info-value">${value}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  ` : '';
+
+  return choicesHtml + metadataHtml;
 }
 
 function mergeOpenAIStreamingResponse(responseBody) {
