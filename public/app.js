@@ -204,7 +204,10 @@ function renderRequestBody(request) {
       <div class="section-body">
         ${messages.map((msg, idx) => `
           <div class="message-item">
-            <div class="message-role"><strong>${msg.role || 'unknown'}</strong></div>
+            <div class="message-role">
+              <strong>${msg.role || 'unknown'}</strong>
+              ${msg.role === 'tool' && msg.tool_call_id ? `<span class="tool-id">${msg.tool_call_id}</span>` : ''}
+            </div>
             ${msg.content ? `<div class="message-content">${escapeHtml(typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2))}</div>` : ''}
             ${msg.tool_calls ? `
               <div class="message-tools">
@@ -213,11 +216,12 @@ function renderRequestBody(request) {
                   ${msg.tool_calls.map(tc => `
                     <div class="tool-item">
                       <div class="tool-header">
-                        <strong>${tc.function?.name || 'Unknown'}</strong>
-                        ${tc.index !== undefined ? `<span class="badge">Index: ${tc.index}</span>` : ''}
+                        <div>
+                          <strong>${tc.type || 'function'}: ${tc.function?.name || 'Unknown'}</strong>
+                          ${tc.index !== undefined ? `<span class="badge" style="margin-left: 8px;">Index: ${tc.index}</span>` : ''}
+                        </div>
+                        ${tc.id ? `<span class="tool-id">${tc.id}</span>` : ''}
                       </div>
-                      ${tc.id ? `<div class="tool-meta">ID: ${tc.id}</div>` : ''}
-                      ${tc.type ? `<div class="tool-meta">Type: ${tc.type}</div>` : ''}
                       ${tc.function?.arguments ? `
                         <div class="tool-args">
                           <strong>Arguments:</strong>
@@ -229,7 +233,6 @@ function renderRequestBody(request) {
                 </div>
               </div>
             ` : ''}
-            ${msg.tool_call_id ? `<div class="message-tool-id"><strong>Tool Call ID:</strong> ${msg.tool_call_id}</div>` : ''}
             ${msg.name ? `<div class="message-name"><strong>Name:</strong> ${msg.name}</div>` : ''}
           </div>
         `).join('')}
@@ -409,11 +412,12 @@ function renderOpenAIResponseBody(response) {
                       ${choice.message.tool_calls.map(tc => `
                         <div class="tool-item">
                           <div class="tool-header">
-                            <strong>${tc.function?.name || 'Unknown'}</strong>
-                            ${tc.index !== undefined ? `<span class="badge">Index: ${tc.index}</span>` : ''}
+                            <div>
+                              <strong>${tc.type || 'function'}: ${tc.function?.name || 'Unknown'}</strong>
+                              ${tc.index !== undefined ? `<span class="badge" style="margin-left: 8px;">Index: ${tc.index}</span>` : ''}
+                            </div>
+                            ${tc.id ? `<span class="tool-id">${tc.id}</span>` : ''}
                           </div>
-                          ${tc.id ? `<div class="tool-meta">ID: ${tc.id}</div>` : ''}
-                          ${tc.type ? `<div class="tool-meta">Type: ${tc.type}</div>` : ''}
                           ${tc.function?.arguments ? `
                             <div class="tool-args">
                               <strong>Arguments:</strong>
