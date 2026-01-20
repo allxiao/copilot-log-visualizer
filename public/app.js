@@ -206,7 +206,29 @@ function renderRequestBody(request) {
           <div class="message-item">
             <div class="message-role"><strong>${msg.role || 'unknown'}</strong></div>
             ${msg.content ? `<div class="message-content">${escapeHtml(typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2))}</div>` : ''}
-            ${msg.tool_calls ? `<div class="message-tools"><strong>Tool Calls:</strong><pre>${JSON.stringify(msg.tool_calls, null, 2)}</pre></div>` : ''}
+            ${msg.tool_calls ? `
+              <div class="message-tools">
+                <strong>Tool Calls:</strong>
+                <div style="margin-top: 8px;">
+                  ${msg.tool_calls.map(tc => `
+                    <div class="tool-item">
+                      <div class="tool-header">
+                        <strong>${tc.function?.name || 'Unknown'}</strong>
+                        ${tc.index !== undefined ? `<span class="badge">Index: ${tc.index}</span>` : ''}
+                      </div>
+                      ${tc.id ? `<div class="tool-meta">ID: ${tc.id}</div>` : ''}
+                      ${tc.type ? `<div class="tool-meta">Type: ${tc.type}</div>` : ''}
+                      ${tc.function?.arguments ? `
+                        <div class="tool-args">
+                          <strong>Arguments:</strong>
+                          <pre>${typeof tc.function.arguments === 'string' ? tc.function.arguments : JSON.stringify(tc.function.arguments, null, 2)}</pre>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
             ${msg.tool_call_id ? `<div class="message-tool-id"><strong>Tool Call ID:</strong> ${msg.tool_call_id}</div>` : ''}
             ${msg.name ? `<div class="message-name"><strong>Name:</strong> ${msg.name}</div>` : ''}
           </div>
