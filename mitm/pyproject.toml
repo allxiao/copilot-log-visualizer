@@ -1,0 +1,9 @@
+[project]
+name = "mitm"
+version = "0.1.0"
+description = "mitmproxy tools for capturing the Copilot CLI requests"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "mitmproxy>=12.2.1",
+]
