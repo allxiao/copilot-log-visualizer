@@ -2,6 +2,30 @@ let requests = [];
 let selectedRequest = null;
 let selectedPaths = new Set(); // Track selected filter paths
 
+// Load saved filter selections from localStorage
+function loadFilterSelections() {
+  try {
+    const saved = localStorage.getItem('copilot-log-filter-paths');
+    if (saved) {
+      selectedPaths = new Set(JSON.parse(saved));
+    }
+  } catch (error) {
+    console.error('Error loading filter selections:', error);
+  }
+}
+
+// Save filter selections to localStorage
+function saveFilterSelections() {
+  try {
+    localStorage.setItem('copilot-log-filter-paths', JSON.stringify([...selectedPaths]));
+  } catch (error) {
+    console.error('Error saving filter selections:', error);
+  }
+}
+
+// Initialize filter selections on load
+loadFilterSelections();
+
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 const container = document.getElementById('container');
@@ -79,6 +103,16 @@ function renderRequestList() {
       return req.url;
     }
   }))].sort();
+
+  // Check if any of the selected paths exist in the current data
+  const selectedPathsArray = [...selectedPaths];
+  const hasMatchingPaths = selectedPathsArray.some(path => uniquePaths.includes(path));
+  
+  // Reset to "all" if none of the selected paths match
+  if (selectedPaths.size > 0 && !hasMatchingPaths) {
+    selectedPaths.clear();
+    saveFilterSelections();
+  }
 
   // Filter requests based on selected paths
   const filteredRequests = selectedPaths.size === 0 
@@ -860,6 +894,7 @@ function togglePath(path) {
   } else {
     selectedPaths.add(path);
   }
+  saveFilterSelections();
   renderRequestList();
   // Keep dropdown open after selection
   const dropdown = document.getElementById('filterOptions');
@@ -870,6 +905,7 @@ function togglePath(path) {
 
 function selectAllPaths() {
   selectedPaths.clear();
+  saveFilterSelections();
   renderRequestList();
   // Keep dropdown open after selection
   const dropdown = document.getElementById('filterOptions');
