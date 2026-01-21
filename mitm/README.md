@@ -51,15 +51,18 @@ In another terminal, use the proxied copilot wrapper:
 
 **Windows:**
 ```cmd
-cd ..\scripts
-proxied-copilot.cmd
+cd path\to\your\project
+path\to\scripts\proxied-copilot.cmd
 ```
 
 **Linux/macOS:**
 ```bash
-cd ../scripts
-./proxied-copilot.sh
+cd path/to/your/project
+path/to/scripts/proxied-copilot.sh
 ```
+
+**You can copy the wrapper script to one of your `PATH` directory, so that it can be invoked directly from your working
+project directory.**
 
 This wrapper:
 - Sets `http_proxy` and `https_proxy` to `http://127.0.0.1:8080`
