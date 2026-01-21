@@ -81,6 +81,9 @@ npm start
 http://localhost:3001
 ```
 
+4. Follow [mitm/README.md](mitm/README.md) to proxy Copilot CLI request and write logs. Then upload the jsonl logs to
+   the website.
+
 ## 📖 Usage
 
 ### Capturing Logs with Mitmproxy
@@ -305,7 +308,7 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ## 📄 License
 
-ISC
+MIT
 
 ## 🙏 Acknowledgments
 
