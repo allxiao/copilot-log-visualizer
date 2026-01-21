@@ -382,7 +382,7 @@ function renderRequestBody(request) {
     <div class="section">
       <div class="section-header">Request Body</div>
       <div class="section-body">
-        <pre>${JSON.stringify(body, null, 2)}</pre>
+        <pre>${escapeHtml(JSON.stringify(body, null, 2))}</pre>
       </div>
     </div>
     `;
@@ -430,7 +430,7 @@ function renderRequestBody(request) {
                 .map(([key, value]) => `
                   <div style="margin-top: 8px;">
                     <div style="font-weight: 600; color: #0366d6; font-size: 12px; margin-bottom: 4px;">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
-                    <div class="message-content" style="border-left: 3px solid #0366d6; padding-left: 12px; background: #f1f8ff;">${typeof value === 'string' ? escapeHtml(value) : `<pre style="margin: 0; background: transparent; border: none; padding: 0;">${JSON.stringify(value, null, 2)}</pre>`}</div>
+                    <div class="message-content" style="border-left: 3px solid #0366d6; padding-left: 12px; background: #f1f8ff;">${typeof value === 'string' ? escapeHtml(value) : `<pre style="margin: 0; background: transparent; border: none; padding: 0;">${escapeHtml(JSON.stringify(value, null, 2))}</pre>`}</div>
                   </div>
                 `).join('')}
               ${msg.tool_calls ? `
@@ -449,7 +449,7 @@ function renderRequestBody(request) {
                         ${tc.function?.arguments ? `
                           <div class="tool-args">
                             <strong>Arguments:</strong>
-                            <pre>${typeof tc.function.arguments === 'string' ? tc.function.arguments : JSON.stringify(tc.function.arguments, null, 2)}</pre>
+                            <pre>${escapeHtml(typeof tc.function.arguments === 'string' ? tc.function.arguments : JSON.stringify(tc.function.arguments, null, 2))}</pre>
                           </div>
                         ` : ''}
                       </div>
@@ -478,7 +478,7 @@ function renderRequestBody(request) {
               <strong>${tool.type || 'function'}${tool.function?.name ? `: ${tool.function.name}` : ''}</strong>
             </div>
             ${tool.function?.description ? `<div class="tool-description" style="white-space: pre-wrap;">${escapeHtml(tool.function.description)}</div>` : ''}
-            ${tool.function?.parameters ? `<div class="tool-params"><pre>${JSON.stringify(tool.function.parameters, null, 2)}</pre></div>` : ''}
+            ${tool.function?.parameters ? `<div class="tool-params"><pre>${escapeHtml(JSON.stringify(tool.function.parameters, null, 2))}</pre></div>` : ''}
           </div>
         `).join('')}
       </div>
@@ -495,7 +495,7 @@ function renderRequestBody(request) {
         ${Object.entries(metadata).map(([key, value]) => `
           <div class="info-row">
             <div class="info-label">${key}</div>
-            <div class="info-value">${typeof value === 'object' ? `<pre>${JSON.stringify(value, null, 2)}</pre>` : escapeHtml(String(value))}</div>
+            <div class="info-value">${typeof value === 'object' ? `<pre>${escapeHtml(JSON.stringify(value, null, 2))}</pre>` : escapeHtml(String(value))}</div>
           </div>
         `).join('')}
       </div>
@@ -508,7 +508,7 @@ function renderRequestBody(request) {
         <span>Request Body (Raw)</span>
       </div>
       <div class="section-body" style="display: none;">
-        <pre>${JSON.stringify(body, null, 2)}</pre>
+        <pre>${escapeHtml(JSON.stringify(body, null, 2))}</pre>
       </div>
     </div>
   `;
@@ -583,7 +583,7 @@ function renderResponseDetails() {
         <span>Response Body (Merged)</span>
       </div>
       <div class="section-body" ${isOpenAI ? 'style="display: none;"' : ''}>
-        <pre>${JSON.stringify(mergedResponse, null, 2)}</pre>
+        <pre>${escapeHtml(JSON.stringify(mergedResponse, null, 2))}</pre>
       </div>
     </div>
     ` : ''}
@@ -595,7 +595,7 @@ function renderResponseDetails() {
         <span>Response Body ${mergedResponse || isChunked ? '(Raw)' : ''}</span>
       </div>
       <div class="section-body" ${mergedResponse || isChunked ? 'style="display: none;"' : ''}>
-        <pre>${JSON.stringify(selectedRequest.response.body, null, 2)}</pre>
+        <pre>${escapeHtml(JSON.stringify(selectedRequest.response.body, null, 2))}</pre>
       </div>
     </div>
     ` : ''}
@@ -639,7 +639,7 @@ function renderOpenAIResponseBody(response) {
                   .map(([key, value]) => `
                     <div class="choice-field">
                       <div class="choice-label">${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
-                      <div class="choice-value"><pre>${typeof value === 'string' ? value : JSON.stringify(value, null, 2)}</pre></div>
+                      <div class="choice-value"><pre>${escapeHtml(typeof value === 'string' ? value : JSON.stringify(value, null, 2))}</pre></div>
                     </div>
                   `).join('')}
                 ${choice.message.tool_calls && choice.message.tool_calls.length > 0 ? `
@@ -658,7 +658,7 @@ function renderOpenAIResponseBody(response) {
                           ${tc.function?.arguments ? `
                             <div class="tool-args">
                               <strong>Arguments:</strong>
-                              <pre>${JSON.stringify(tc.function.arguments, null, 2)}</pre>
+                              <pre>${escapeHtml(JSON.stringify(tc.function.arguments, null, 2))}</pre>
                             </div>
                           ` : ''}
                         </div>
