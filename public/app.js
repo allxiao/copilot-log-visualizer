@@ -32,8 +32,40 @@ const container = document.getElementById('container');
 const sidebar = document.getElementById('sidebar');
 const requestPanel = document.getElementById('request-panel');
 const responsePanel = document.getElementById('response-panel');
+const headerUpload = document.getElementById('headerUpload');
+const headerDropZone = document.getElementById('headerDropZone');
+const headerFileInput = document.getElementById('headerFileInput');
 
 dropZone.addEventListener('click', () => fileInput.click());
+
+// Header upload - click to browse
+headerDropZone.addEventListener('click', () => headerFileInput.click());
+
+// Header upload - drag and drop
+headerDropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  headerDropZone.classList.add('dragover');
+});
+
+headerDropZone.addEventListener('dragleave', () => {
+  headerDropZone.classList.remove('dragover');
+});
+
+headerDropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  headerDropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    handleFile(file);
+  }
+});
+
+headerFileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    handleFile(file);
+  }
+});
 
 dropZone.addEventListener('dragover', (e) => {
   e.preventDefault();
@@ -68,9 +100,13 @@ async function handleFile(file) {
 
   const content = await file.text();
   
+  // Check if we're already viewing logs (to determine if we should push or replace state)
+  const isAlreadyViewingLogs = container.classList.contains('visible');
+  
   sidebar.innerHTML = '<div class="loading">Parsing logs...</div>';
   dropZone.classList.add('hidden');
   container.classList.add('visible');
+  headerUpload.classList.add('visible');
 
   try {
     const response = await fetch('/parse', {
@@ -84,8 +120,12 @@ async function handleFile(file) {
     requests = await response.json();
     renderRequestList();
     
-    // Push state to history with requests data so back/forward works
-    history.pushState({ view: 'logs', requests: requests }, '', '#logs');
+    // If already viewing logs, replace state; otherwise push new state
+    if (isAlreadyViewingLogs) {
+      history.replaceState({ view: 'logs', requests: requests }, '', '#logs');
+    } else {
+      history.pushState({ view: 'logs', requests: requests }, '', '#logs');
+    }
   } catch (error) {
     sidebar.innerHTML = '<div class="empty-state">Error parsing logs</div>';
     console.error('Error:', error);
@@ -939,8 +979,10 @@ function selectAllPaths() {
 function showUploadView() {
   dropZone.classList.remove('hidden');
   container.classList.remove('visible');
+  headerUpload.classList.remove('visible');
   // Clear the file input so the same file can be uploaded again
   fileInput.value = '';
+  headerFileInput.value = '';
   // Don't clear requests/selectedRequest - keep them in memory for forward navigation
 }
 
@@ -951,6 +993,7 @@ function showLogsView(requestsData) {
   }
   dropZone.classList.add('hidden');
   container.classList.add('visible');
+  headerUpload.classList.add('visible');
   renderRequestList();
 }
 
