@@ -19,5 +19,5 @@
     "noFallthroughCasesInSwitch": false,
     "esModuleInterop": true
   },
-  "exclude": ["node_modules", "dist", "mitm"]
+  "exclude": ["node_modules", "dist", "mitm", "scripts"]
 }
