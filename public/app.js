@@ -83,6 +83,9 @@ async function handleFile(file) {
 
     requests = await response.json();
     renderRequestList();
+    
+    // Push state to history with requests data so back/forward works
+    history.pushState({ view: 'logs', requests: requests }, '', '#logs');
   } catch (error) {
     sidebar.innerHTML = '<div class="empty-state">Error parsing logs</div>';
     console.error('Error:', error);
@@ -931,6 +934,40 @@ function selectAllPaths() {
     dropdown.style.display = 'block';
   }
 }
+
+// Function to return to upload view
+function showUploadView() {
+  dropZone.classList.remove('hidden');
+  container.classList.remove('visible');
+  // Clear the file input so the same file can be uploaded again
+  fileInput.value = '';
+  // Don't clear requests/selectedRequest - keep them in memory for forward navigation
+}
+
+// Function to show logs view
+function showLogsView(requestsData) {
+  if (requestsData) {
+    requests = requestsData;
+  }
+  dropZone.classList.add('hidden');
+  container.classList.add('visible');
+  renderRequestList();
+}
+
+// Initialize history state for upload view (without hash)
+const baseUrl = location.href.split('#')[0];
+if (!history.state) {
+  history.replaceState({ view: 'upload' }, '', baseUrl);
+}
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', (event) => {
+  if (!event.state || event.state.view === 'upload') {
+    showUploadView();
+  } else if (event.state.view === 'logs') {
+    showLogsView(event.state.requests);
+  }
+});
 
 // Close dropdown when clicking outside
 document.addEventListener('click', (e) => {
