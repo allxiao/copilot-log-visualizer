@@ -43,6 +43,8 @@ copilot-log-visualizer/
 ├── public/
 │   ├── index.html        # Main HTML page
 │   └── app.js            # Frontend JavaScript
+├── scripts/              # Utility scripts
+├── mitm/                 # Mitmproxy configuration for capturing logs
 ├── package.json
 └── tsconfig.json
 ```
@@ -109,6 +111,20 @@ For OpenAI chat completion requests with tool calls:
 4. **Highlight**: Target element is temporarily highlighted for easy identification
 
 ## How It Works
+
+### Capturing Logs with Mitmproxy
+
+The application uses [mitmproxy](https://mitmproxy.org/) to intercept and capture HTTP/HTTPS traffic from GitHub Copilot CLI:
+
+1. **Proxy Setup**: Mitmproxy runs as a man-in-the-middle proxy on `127.0.0.1:8080`
+2. **Traffic Capture**: A custom Python script (`mitm-to-json.py`) captures each request/response in real-time
+3. **JSON Conversion**: Each HTTP transaction is converted to a JSON object with:
+   - Request/response headers and body
+   - Timing information (start timestamp and completion time)
+   - HTTP method, URL, and status code
+4. **JSONL Output**: Each transaction is written as a single line to `out.jsonl`
+
+The captured log file is then loaded into this visualizer for analysis. See [mitm/README.md](mitm/README.md) for detailed setup instructions.
 
 ### Backend (NestJS)
 
