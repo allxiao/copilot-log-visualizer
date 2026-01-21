@@ -1,6 +1,12 @@
 import json
+import os
 from datetime import datetime, timezone
 from mitmproxy import http
+
+
+# Check if Authorization header should be logged (default: False)
+# This is checked once at module load time for efficiency
+LOG_AUTHORIZATION = os.environ.get('MITM_LOG_AUTHORIZATION', '0').lower() in ('1', 'true', 'yes')
 
 
 def format_timestamp(ts: float) -> str:
@@ -17,7 +23,18 @@ def response(flow: http.HTTPFlow):
 
     # helper function to safely get dictionary from headers
     def headers_to_dict(headers):
-        return {k: v for k, v in headers.items()}
+        # If logging authorization, convert headers directly (fast path)
+        if LOG_AUTHORIZATION:
+            return {k: v for k, v in headers.items()}
+
+        # Otherwise, filter out Authorization header
+        result = {}
+        for k, v in headers.items():
+            if k.lower() == 'authorization':
+                result[k] = '[REDACTED]'
+            else:
+                result[k] = v
+        return result
 
     # Construct the dictionary object
     record = {

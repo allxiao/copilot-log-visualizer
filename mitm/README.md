@@ -81,6 +81,14 @@ Each line in `out.jsonl` will be a JSON object containing:
 - `request` - Object with `headers` and `body`
 - `response` - Object with `headers` and `body`
 
+**Security Note:** By default, the `Authorization` header in requests is replaced with `[REDACTED]` for safety. To include the actual Authorization header values, set the environment variable `MITM_LOG_AUTHORIZATION=1` before starting the proxy.
+
+## Environment Variables
+
+- **`MITM_LOG_AUTHORIZATION`** - Controls whether to log Authorization headers (default: `0`)
+  - Set to `1`, `true`, or `yes` to log actual Authorization header values
+  - When disabled (default), Authorization headers are logged as `[REDACTED]`
+
 ## Files
 
 - **`mitm-to-json.py`** - mitmproxy script that formats traffic as JSON lines
