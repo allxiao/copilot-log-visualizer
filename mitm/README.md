@@ -8,6 +8,18 @@ request logs in JSONL format can be later visualized by the web app in the outer
 - [uv](https://docs.astral.sh/uv/) - Python package installer (used to run `mitmdump` via `uvx`)
 - The utilities will automatically install mitmproxy when needed
 
+You need to whitelist the mitmproxy's CA cert, so that the certificate is trusted when you intercept HTTPS traffic.
+
+1. Run `uvx --from mitmproxy mitmweb`
+2. This will open a web page at `http://127.0.0.1:8081`, if not, manually open it.
+3. Configure your browser to use the mitmproxy's proxy: `http://127.0.0.1:8080`, and click the "File" --> "Install Certificates..."
+
+   This will open `http://mitm.it/`. If the proxy is configured properly, you will see the instructions of importing the
+   certificates.
+
+   You can also do this manually. Go to `%USERPROFILE%\.mitmproxy\`, then import the certificate `mitmproxy-ca-cert.p12`
+   to the `Trusted Root Certificate Authority` of your machine, starting by right click and "Install PFX".
+
 ## Quick Start
 
 ### 1. Start the Proxy and Capture to File
