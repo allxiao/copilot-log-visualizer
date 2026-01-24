@@ -1,7 +1,11 @@
 import json
 import os
+import sys
 from datetime import datetime, timezone
 from mitmproxy import http
+
+# Reconfigure stdout to use UTF-8 encoding (fixes issues on Windows with GBK console)
+sys.stdout.reconfigure(encoding='utf-8')
 
 
 # Check if Authorization header should be logged (default: False)
