@@ -546,7 +546,7 @@ function renderResponseDetails() {
 
   const isOpenAI = isOpenAIChatCompletions(selectedRequest);
   const isChunked = Array.isArray(selectedRequest.response.body);
-  
+
   // Try to merge if it's OpenAI OR if it's any chunked response with SSE format
   let mergedResponse = null;
   if (isChunked && selectedRequest.response.body.length > 0) {
@@ -557,6 +557,12 @@ function renderResponseDetails() {
       mergedResponse = mergeGenericStreamingResponse(selectedRequest.response.body);
     }
   }
+
+  // Check if non-chunked response already has the complete response structure
+  const hasCompleteResponse = !isChunked && isOpenAI &&
+    selectedRequest.response.body &&
+    typeof selectedRequest.response.body === 'object' &&
+    selectedRequest.response.body.choices;
 
   responsePanel.innerHTML = `
     <div class="section collapsible collapsed">
@@ -575,6 +581,7 @@ function renderResponseDetails() {
     </div>
 
     ${mergedResponse && isOpenAI ? renderOpenAIResponseBody(mergedResponse) : ''}
+    ${hasCompleteResponse ? renderOpenAIResponseBody(selectedRequest.response.body) : ''}
 
     ${mergedResponse ? `
     <div class="section collapsible ${isOpenAI ? 'collapsed' : ''}">
@@ -589,12 +596,12 @@ function renderResponseDetails() {
     ` : ''}
 
     ${selectedRequest.response.body ? `
-    <div class="section collapsible ${mergedResponse || isChunked ? 'collapsed' : ''}">
+    <div class="section collapsible ${mergedResponse || isChunked || hasCompleteResponse ? 'collapsed' : ''}">
       <div class="section-header collapsible-header" onclick="toggleSection(this)">
-        <span class="toggle-icon">${mergedResponse || isChunked ? '▶' : '▼'}</span>
-        <span>Response Body ${mergedResponse || isChunked ? '(Raw)' : ''}</span>
+        <span class="toggle-icon">${mergedResponse || isChunked || hasCompleteResponse ? '▶' : '▼'}</span>
+        <span>Response Body ${mergedResponse || isChunked || hasCompleteResponse ? '(Raw)' : ''}</span>
       </div>
-      <div class="section-body" ${mergedResponse || isChunked ? 'style="display: none;"' : ''}>
+      <div class="section-body" ${mergedResponse || isChunked || hasCompleteResponse ? 'style="display: none;"' : ''}>
         <pre>${escapeHtml(JSON.stringify(selectedRequest.response.body, null, 2))}</pre>
       </div>
     </div>
