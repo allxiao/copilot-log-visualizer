@@ -473,12 +473,15 @@ function renderRequestBody(request) {
       </div>
       <div class="section-body" style="display: none;">
         ${tools.map((tool, idx) => `
-          <div class="tool-item">
-            <div class="tool-header">
+          <div class="tool-item collapsible collapsed">
+            <div class="tool-header collapsible-header" onclick="toggleSection(this)">
+              <span class="toggle-icon">▶</span>
               <strong>${tool.type || 'function'}${tool.function?.name ? `: ${tool.function.name}` : ''}</strong>
             </div>
-            ${tool.function?.description ? `<div class="tool-description" style="white-space: pre-wrap;">${escapeHtml(tool.function.description)}</div>` : ''}
-            ${tool.function?.parameters ? `<div class="tool-params"><pre>${escapeHtml(JSON.stringify(tool.function.parameters, null, 2))}</pre></div>` : ''}
+            <div class="section-body" style="display: none;">
+              ${tool.function?.description ? `<div class="tool-description" style="white-space: pre-wrap;">${escapeHtml(tool.function.description)}</div>` : ''}
+              ${tool.function?.parameters ? `<div class="tool-params"><pre>${escapeHtml(JSON.stringify(tool.function.parameters, null, 2))}</pre></div>` : ''}
+            </div>
           </div>
         `).join('')}
       </div>

@@ -543,6 +543,22 @@
       font-size: 13px;
     }
 
+    .tool-header.collapsible-header {
+      cursor: pointer;
+      padding: 8px 0;
+      margin: -8px 0;
+      justify-content: flex-start;
+      gap: 8px;
+    }
+
+    .tool-header.collapsible-header:hover {
+      background: rgba(3, 102, 214, 0.05);
+    }
+
+    .tool-item.collapsed .tool-header {
+      margin-bottom: 0;
+    }
+
     .tool-id {
       font-size: 11px;
       font-weight: normal;
