@@ -409,15 +409,15 @@ function renderRequestBody(request) {
       </div>
       <div class="section-body">
         ${messages.map((msg, idx) => `
-          <div class="message-item collapsible" id="message-${idx}">
+          <div class="message-item collapsible${msg.role === 'system' ? ' collapsed' : ''}" id="message-${idx}">
             <div class="message-role collapsible-header" onclick="toggleSection(this)">
               <div>
-                <span class="toggle-icon">▼</span>
+                <span class="toggle-icon">${msg.role === 'system' ? '▶' : '▼'}</span>
                 <strong>${msg.role || 'unknown'}</strong>
               </div>
               ${msg.role === 'tool' && msg.tool_call_id ? `<span class="tool-id tool-id-link" onclick="navigateToToolCall('${msg.tool_call_id}', event)">${msg.tool_call_id}</span>` : ''}
             </div>
-            <div class="message-body">
+            <div class="message-body"${msg.role === 'system' ? ' style="display: none;"' : ''}>
               ${msg.content ? `<div class="message-content">${escapeHtml(typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content, null, 2))}</div>` : ''}
               ${msg.refusal ? `
                 <div style="margin-top: 8px;">
