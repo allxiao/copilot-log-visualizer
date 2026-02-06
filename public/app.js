@@ -478,7 +478,7 @@ function renderRequestBody(request) {
               <span class="toggle-icon">▶</span>
               <strong>${tool.type || 'function'}${tool.function?.name ? `: ${tool.function.name}` : ''}</strong>
             </div>
-            <div class="section-body" style="display: none;">
+            <div class="tool-body" style="display: none;">
               ${tool.function?.description ? `<div class="tool-description" style="white-space: pre-wrap;">${escapeHtml(tool.function.description)}</div>` : ''}
               ${tool.function?.parameters ? `<div class="tool-params"><pre>${escapeHtml(JSON.stringify(tool.function.parameters, null, 2))}</pre></div>` : ''}
             </div>
@@ -519,16 +519,16 @@ function renderRequestBody(request) {
 
 function toggleSection(header) {
   const section = header.parentElement;
-  const body = section.querySelector('.section-body');
+  const body = section.querySelector('.section-body, .message-body, .tool-body');
   const icon = header.querySelector('.toggle-icon');
-  
+
   if (section.classList.contains('collapsed')) {
     section.classList.remove('collapsed');
-    body.style.display = 'block';
+    if (body) body.style.display = 'block';
     icon.textContent = '▼';
   } else {
     section.classList.add('collapsed');
-    body.style.display = 'none';
+    if (body) body.style.display = 'none';
     icon.textContent = '▶';
   }
 }
